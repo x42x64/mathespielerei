@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="text/javascript">
+      var chart = null;  // global chart reference
+      
+      function updateFractions()
+      {
+          var denominatorCandidate = document.getElementById('denominator').value;
+          var den = parseFloat(denominatorCandidate);
+          
+          if(isNaN(den) || den == 0.0)
+          {
+              console.log(denominatorCandidate);
+              console.log(den);
+              document.getElementById('warning').innerText = "Der Teiler muss eine Zahl sein und darf nicht 0 sein!";
+              return;
+          }
+
+          document.getElementById('warning').innerText = "";
+          chart.axisX[0].set("stripLines", generateFractions(den, -10, 10));
+      }
+
+      function generateData(nbPts, minVal, maxVal)
+      {        
+        var data = []; var dataSeries = { type: "line" };
+        var dataPoints = [];
+        
+        for (var i = 0; i < nbPts; i += 1) {
+            y = 0;
+            dataPoints.push({
+            x: (maxVal-minVal)/nbPts*i + minVal,
+            y: 0
+            });
+            }
+        dataSeries.dataPoints = dataPoints;
+        data.push(dataSeries);
+        return data;
+    }
+
+    function rangeChangingHandler(e)
+    {
+        var minVal = e.axisX[0].viewportMinimum;
+        var maxVal = e.axisX[0].viewportMaximum;
+        if (minVal == null || maxVal == null) // e.g. after reset
+        {
+            minVal = -1;
+            maxVal = 2;
+        }
+        chart.set("data", generateData(1000, minVal-(maxVal-minVal), maxVal+(maxVal-minVal)));
+        document.getElementById('lowerLimit').value = minVal;
+        document.getElementById('upperLimit').value = maxVal;
+        // console.log(Math.pow(10, (Math.round(Math.log10(maxVal-minVal))-1)));
+        // chart.axisX[0].set("interval", Math.pow(10, (Math.round(Math.log10(maxVal-minVal))-1)));
+        
+    }
+
+    function updateRange()
+    {
+        var minVal = parseFloat(document.getElementById('lowerLimit').value);
+        var maxVal = parseFloat(document.getElementById('upperLimit').value);
+        if (minVal == null || maxVal == null) // e.g. after reset
+        {
+            minVal = -1;
+            maxVal = 2;
+        }
+        chart.set("data", generateData(1000, minVal-(maxVal-minVal), maxVal+(maxVal-minVal)));
+    }
+
+    function generateFractions(denominator, minVal, maxVal)
+    {
+        var stripLines = [];
+        var nominator = minVal * denominator;
+        for(; nominator <= maxVal*denominator; nominator += 1)
+        {
+            stripLines.push(
+                {
+                  label: nominator + "/" + denominator,
+                  value: nominator/denominator
+              }
+            )
+        }
+        return stripLines;
+        
+    }
+
+
+  window.onload = function () {
+
+    chart = new CanvasJS.Chart("chartContainer",
+    {
+      rangeChanging: rangeChangingHandler,
+      zoomEnabled: true,
+      zoomType: "x",
+      title:{
+        text: "Zahlenstrahl für Jean-Pierre"
+      },
+      legend: {
+        horizontalAlign: "right",
+        verticalAlign: "center"
+      },
+      toolTip:{
+          content: "{x}"
+      },
+      axisX:{
+          crosshair:{
+              enabled: true
+          },
+          labelAngle: -45,
+          labelFormatter: function(e){
+				return  e.value;
+			},
+          stripLines:generateFractions(1, -1, 2),
+          viewportMaximum: 2,
+          viewportMinimum: -1
+      },
+      axisY:{
+        includeZero: true,
+        minimum: -1,
+        maximum: 1
+      },
+      data: generateData(1000, -4, 5),  // random generator below
+
+   });
+    chart.render();
+    updateFractions();
+  }
+
+
+  </script>
+  <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script></head>
+  <body>
+    <div id="chartContainer" style="height: 300px; width: 100%;">
+    </div>
+    <div>
+            Teiler: <input id="denominator" type="text" onchange="updateFractions()" value="1"><button onclick="updateFractions()">OK</button>
+            <p id="warning" style="color:red"></p>
+            Zahlenstrahl von <input id="lowerLimit" type="text" onchange="updateRange()" value="-1"> bis <input id="upperLimit" type="text" onchange="updateRange()" value="2"><button onchange="updateRange()">OK</button>
+    </div>
+  </body>
+  </html>
